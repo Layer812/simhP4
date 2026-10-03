@@ -1,0 +1,18 @@
+simhP4 PDP-7 UNIX V0 - RELEASE FINAL B-TOOLS FIX
+
+Guest B acceptance target:
+  @ b hello.b hello.s
+  @ as ops.s bl.s hello.s bi.s
+  @ a.out
+  Hello, World!
+
+Boot migration policy:
+  - exact read-only audit of system/b, dmr/bi.s, dmr/bl.s
+  - add exact upstream dmr/ops.s only when absent
+  - update exact old b_readme from bc to b
+  - preserve dmr/op.s
+  - patch a complete temp disk copy and verify before promotion
+  - preserve original as /sdcard/BTOOLBAK.DSK
+
+Upstream payload basis:
+  DoctorWkt/pdp7-unix 555eb30fc76b8fa29095d32eca9a43e9b1638288

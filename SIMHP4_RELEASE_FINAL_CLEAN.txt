@@ -1,0 +1,20 @@
+simhP4 PDP-7 UNIX V0 - RELEASE FINAL CLEAN
+
+Removed investigation-only observers:
+  R14/R14B/R14C display ownership/process/exit-origin traces
+  R14D DIRECT_CAL/HIST/MEM observer
+  R14E fmp return-slot write/jump observer
+  R19B ST_LOOP rate observer
+  R19B PRESENT rate observer
+
+Preserved behavior:
+  recovered Bell Labs GRAPHIC-II decoder (R16)
+  R17 packed 9-bit text fix
+  R19B held A164 3..6 / arrows and edge 7/8/Z/X
+  R19 diff presenter and R19C graphics cadence
+  Space Travel corrected layout/migration
+  B-tools corrected filesystem migration
+  RB09 persistence, USB/local TTY, Wi-Fi/remote TTY
+  Release Final copyright/license notices
+
+No guest pacing or guest-visible device semantics were changed by this cleanup.

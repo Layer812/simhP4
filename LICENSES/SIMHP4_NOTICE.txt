@@ -1,0 +1,18 @@
+simhP4 / RetroP4 integration notice
+====================================
+
+Copyright (c) 2026 simhP4 contributors
+
+This notice applies to original simhP4 / RetroP4 integration code and
+modifications created for the ESP32-P4 / M5Stack Tab5 port.
+
+Upstream and recovered SIMH-derived source retains its original copyright
+notices and license terms. Open SIMH describes its project license as an
+MIT open source license; the exact wording redistributed with this project
+is in LICENSES/SIMH_LICENSE.txt.
+
+Important upstream attributions in the current PDP-7 / GRAPHIC-II path include:
+- PDP18B CPU simulator: Robert M Supnik
+- GRAPHIC-II / display code: Philip L. Budne and Lars Brinkhoff where noted
+
+Do not remove upstream copyright notices when modifying derived files.

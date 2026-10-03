@@ -1,0 +1,11 @@
+simhP4 PDP-7 UNIX V0 - RELEASE FINAL
+
+On-screen notice:
+  simhP4 © 2026 simhP4 contributors
+  Open SIMH based
+
+Base savepoint: R0A9R19C
+Guest/device semantics: unchanged by finalizer
+Input: R19B held controls preserved
+Graphics: R19 diff presenter + R19C cadence preserved
+Licenses: see LICENSES/SIMH_LICENSE.txt and LICENSES/SIMHP4_NOTICE.txt
