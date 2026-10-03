@@ -1,5 +1,7 @@
 # simhP4 — PDP-7 UNIX V0
 
+**[日本語版はこちら](#日本語)**
+
 ![simhP4 PDP-7 UNIX V0](title.jpg)
 
 A portable PDP-7 UNIX V0 environment for **M5Stack Tab5 / ESP32-P4**, built on Open SIMH and the reconstructed PDP-7 UNIX sources.
@@ -21,6 +23,15 @@ M5Burner share code:
 ```text
 qz8IApmUlBDOpGBP
 ```
+
+For the Release Final firmware, **you do not need to copy `image.fs` to the microSD card manually**. The build embeds `image.fs` and `boot.rim` in the firmware and, on first boot, seeds:
+
+```text
+/sdcard/UNIXV0.DSK
+/sdcard/BOOT.RIM
+```
+
+if the expected files are not already present. A **writable FAT-formatted microSD card is still required** because UNIX V0 runs from the persistent SD-backed disk. In other words: flash with M5Burner, insert a usable microSD card, and boot; no manual `image.fs` copy is required.
 
 The **Release Final Clean source code is included in this repository**. External source trees are pinned to the exact commits used by this build.
 
@@ -244,7 +255,7 @@ simhP4 © 2026 simhP4 contributors
 Open SIMH based
 ```
 
-Open SIMH and other upstream components retain their original copyrights and licenses.
+Original simhP4 / RetroP4 integration code and simhP4-authored modifications are released under the **MIT License**. Open SIMH and other upstream components retain their original copyrights and licenses.
 
 This repository keeps third-party license texts under [`LICENSES/`](LICENSES/). In particular:
 
@@ -286,6 +297,17 @@ UNIX V0は、1969～1970年頃にBell LabsでPDP-7向けに作られた最初期
 ```text
 qz8IApmUlBDOpGBP
 ```
+
+Release Finalでは、**`image.fs`をmicroSDへ手動コピーする必要はありません**。Firmware内に `image.fs` と `boot.rim` を埋め込んであり、初回起動時に必要であれば自動的に:
+
+```text
+/sdcard/UNIXV0.DSK
+/sdcard/BOOT.RIM
+```
+
+を作成します。
+
+ただし、UNIX V0の書き込み可能な永続diskとして使うため、**書き込み可能でFATとしてmountできるmicroSDカード自体は必要**です。つまり、M5Burnerで書き込み → microSDを挿入 → 起動、でよく、`image.fs`の手動導入は不要です。
 
 ### ソースコード / ビルド
 
@@ -500,7 +522,7 @@ simhP4 © 2026 simhP4 contributors
 Open SIMH based
 ```
 
-Open SIMHなどのupstream componentのcopyrightとlicenseは、それぞれ元のものを維持します。
+simhP4 / RetroP4の独自統合コードおよびsimhP4側の改変部分は **MIT License** とします。Open SIMHなどのupstream componentのcopyrightとlicenseは、それぞれ元のものを維持します。
 
 第三者ライセンス本文は [`LICENSES/`](LICENSES/) に分離して収録します。
 
