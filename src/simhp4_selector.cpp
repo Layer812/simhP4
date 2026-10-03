@@ -1,0 +1,269 @@
+#include "simhp4_selector.h"
+
+#include <M5Unified.h>
+
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+
+#include "simhp4_frontend_input.h"
+
+namespace {
+
+struct MachineEntry {
+    simhp4_machine_id_t id;
+    const char *name;
+    const char *subtitle;
+    const char *detail1;
+    const char *detail2;
+};
+
+struct OsEntry {
+    simhp4_machine_id_t machine;
+    simhp4_os_id_t id;
+    const char *name;
+    const char *subtitle;
+};
+
+static const MachineEntry kMachines[] = {
+    {
+        SIMHP4_MACHINE_PDP7,
+        "PDP-7",
+        "18-bit minicomputer",
+        "Bell Labs GRAPHIC-II",
+        "Release Final savepoint"
+    },
+    {
+        SIMHP4_MACHINE_MICROVAX2,
+        "MicroVAX II",
+        "32-bit VAX / VAX_630",
+        "RQ / MSCP storage",
+        "RetroP4 VAX bring-up"
+    }
+};
+
+static const OsEntry kOs[] = {
+    { SIMHP4_MACHINE_PDP7,      SIMHP4_OS_UNIX_V0, "UNIX V0", "PDP-7 historical UNIX" },
+    { SIMHP4_MACHINE_MICROVAX2, SIMHP4_OS_BSD43,   "4.3BSD",  "Berkeley UNIX for VAX" }
+};
+
+static uint16_t bg()    { return M5.Display.color565(0, 5, 2); }
+static uint16_t panel() { return M5.Display.color565(0, 10, 5); }
+static uint16_t outer() { return M5.Display.color565(0, 42, 18); }
+static uint16_t mid()   { return M5.Display.color565(0, 126, 56); }
+static uint16_t core()  { return M5.Display.color565(112, 255, 164); }
+
+static void neon_text(int x, int y, const char *text, float size)
+{
+    M5.Display.setTextSize(size);
+
+    M5.Display.setTextColor(outer());
+    M5.Display.drawString(text, x - 2, y);
+    M5.Display.drawString(text, x + 2, y);
+    M5.Display.drawString(text, x, y - 2);
+    M5.Display.drawString(text, x, y + 2);
+
+    M5.Display.setTextColor(mid());
+    M5.Display.drawString(text, x - 1, y);
+    M5.Display.drawString(text, x + 1, y);
+    M5.Display.drawString(text, x, y - 1);
+    M5.Display.drawString(text, x, y + 1);
+
+    M5.Display.setTextColor(core());
+    M5.Display.drawString(text, x, y);
+}
+
+static void neon_rect(int x, int y, int w, int h)
+{
+    M5.Display.drawRect(x - 2, y - 2, w + 4, h + 4, outer());
+    M5.Display.drawRect(x - 1, y - 1, w + 2, h + 2, mid());
+    M5.Display.drawRect(x, y, w, h, core());
+}
+
+static void draw_shell(const char *stage, const char *context)
+{
+    const int w = M5.Display.width();
+    const int h = M5.Display.height();
+
+    M5.Display.fillScreen(bg());
+    neon_text(24, 18, "simhP4", 2.0f);
+    neon_text(24, 58, stage, 1.25f);
+
+    M5.Display.setTextColor(mid());
+    M5.Display.setTextSize(1.0f);
+    if (context != nullptr)
+        M5.Display.drawString(context, 24, 92);
+
+    neon_rect(22, 126, w / 2 - 34, h - 196);
+    neon_rect(w / 2 + 10, 126, w / 2 - 32, h - 196);
+
+    M5.Display.setTextSize(0.95f);
+    M5.Display.setTextColor(mid());
+    M5.Display.drawString("UP/DOWN  SELECT", 24, h - 48);
+    M5.Display.drawString("ENTER  NEXT     ESC/BKSP  BACK", w / 2 - 35, h - 48);
+}
+
+static void draw_machine(int selected)
+{
+    const int w = M5.Display.width();
+    draw_shell("MACHINE SELECT", "Choose the simulated machine");
+
+    const int lx = 42;
+    const int ly = 152;
+    const int line = 56;
+
+    for (int i = 0; i < (int)(sizeof(kMachines) / sizeof(kMachines[0])); ++i) {
+        const int y = ly + i * line;
+        M5.Display.setTextSize(1.25f);
+        M5.Display.setTextColor(i == selected ? core() : mid());
+        M5.Display.drawString(i == selected ? ">" : " ", lx, y);
+        M5.Display.drawString(kMachines[i].name, lx + 26, y);
+        M5.Display.setTextSize(0.85f);
+        M5.Display.setTextColor(mid());
+        M5.Display.drawString(kMachines[i].subtitle, lx + 26, y + 25);
+    }
+
+    const MachineEntry &m = kMachines[selected];
+    const int rx = w / 2 + 32;
+    M5.Display.setTextSize(1.35f);
+    M5.Display.setTextColor(core());
+    M5.Display.drawString(m.name, rx, 154);
+    M5.Display.setTextSize(1.0f);
+    M5.Display.setTextColor(mid());
+    M5.Display.drawString(m.detail1, rx, 205);
+    M5.Display.drawString(m.detail2, rx, 235);
+    M5.Display.drawString("OS entries: 1", rx, 290);
+}
+
+static int os_indices(simhp4_machine_id_t machine, int *dst, int cap)
+{
+    int count = 0;
+    for (int i = 0; i < (int)(sizeof(kOs) / sizeof(kOs[0])); ++i) {
+        if (kOs[i].machine == machine && count < cap)
+            dst[count++] = i;
+    }
+    return count;
+}
+
+static void draw_os(simhp4_machine_id_t machine, const int *indices, int count, int selected)
+{
+    const int w = M5.Display.width();
+    const MachineEntry &m = kMachines[(int)machine];
+    draw_shell("OS SELECT", m.name);
+
+    const int lx = 42;
+    const int ly = 152;
+    const int line = 56;
+
+    for (int row = 0; row < count; ++row) {
+        const OsEntry &o = kOs[indices[row]];
+        const int y = ly + row * line;
+        M5.Display.setTextSize(1.25f);
+        M5.Display.setTextColor(row == selected ? core() : mid());
+        M5.Display.drawString(row == selected ? ">" : " ", lx, y);
+        M5.Display.drawString(o.name, lx + 26, y);
+        M5.Display.setTextSize(0.85f);
+        M5.Display.setTextColor(mid());
+        M5.Display.drawString(o.subtitle, lx + 26, y + 25);
+    }
+
+    const OsEntry &o = kOs[indices[selected]];
+    const int rx = w / 2 + 32;
+    M5.Display.setTextSize(1.35f);
+    M5.Display.setTextColor(core());
+    M5.Display.drawString(o.name, rx, 154);
+    M5.Display.setTextSize(1.0f);
+    M5.Display.setTextColor(mid());
+    M5.Display.drawString(m.name, rx, 205);
+    M5.Display.drawString(machine == SIMHP4_MACHINE_PDP7
+                          ? "Embedded seed -> SD persistent disk"
+                          : "SD-backed VAX disk (next phase)",
+                          rx, 240);
+    M5.Display.drawString("ENTER to boot", rx, 290);
+}
+
+static simhp4_frontend_key_t wait_key()
+{
+    simhp4_frontend_key_t key = SIMHP4_FRONTEND_KEY_NONE;
+    for (;;) {
+        M5.update();
+        if (simhp4_frontend_wait_key(&key, 20))
+            return key;
+        vTaskDelay(1);
+    }
+}
+
+} // namespace
+
+extern "C" simhp4_selector_choice_t simhp4_selector_run(void)
+{
+    simhp4_selector_choice_t choice = {
+        SIMHP4_MACHINE_PDP7,
+        SIMHP4_OS_UNIX_V0
+    };
+
+    simhp4_frontend_set_selector_active(1);
+
+    int machine = 0;
+    for (;;) {
+        draw_machine(machine);
+        const simhp4_frontend_key_t key = wait_key();
+
+        if (key == SIMHP4_FRONTEND_KEY_UP) {
+            machine = (machine + (int)(sizeof(kMachines) / sizeof(kMachines[0])) - 1)
+                    % (int)(sizeof(kMachines) / sizeof(kMachines[0]));
+        } else if (key == SIMHP4_FRONTEND_KEY_DOWN) {
+            machine = (machine + 1)
+                    % (int)(sizeof(kMachines) / sizeof(kMachines[0]));
+        } else if (key == SIMHP4_FRONTEND_KEY_ENTER) {
+            choice.machine = kMachines[machine].id;
+            break;
+        }
+    }
+
+    int indices[8] = {};
+    const int count = os_indices(choice.machine, indices, 8);
+    int selected = 0;
+
+    for (;;) {
+        draw_os(choice.machine, indices, count, selected);
+        const simhp4_frontend_key_t key = wait_key();
+
+        if (key == SIMHP4_FRONTEND_KEY_ESCAPE ||
+            key == SIMHP4_FRONTEND_KEY_BACK) {
+            return simhp4_selector_run();
+        }
+        if (key == SIMHP4_FRONTEND_KEY_UP && count > 0) {
+            selected = (selected + count - 1) % count;
+        } else if (key == SIMHP4_FRONTEND_KEY_DOWN && count > 0) {
+            selected = (selected + 1) % count;
+        } else if (key == SIMHP4_FRONTEND_KEY_ENTER && count > 0) {
+            choice.os = kOs[indices[selected]].id;
+            simhp4_frontend_flush();
+            simhp4_frontend_set_selector_active(0);
+            return choice;
+        }
+    }
+}
+
+extern "C" void simhp4_selector_show_not_ready(simhp4_selector_choice_t choice)
+{
+    const char *machine = choice.machine == SIMHP4_MACHINE_MICROVAX2
+                        ? "MicroVAX II" : "PDP-7";
+    const char *os = choice.os == SIMHP4_OS_BSD43 ? "4.3BSD" : "UNIX V0";
+
+    M5.Display.fillScreen(bg());
+    neon_text(24, 18, "simhP4", 2.0f);
+    neon_text(24, 66, "BOOT TARGET", 1.2f);
+    neon_rect(22, 124, M5.Display.width() - 44, M5.Display.height() - 194);
+
+    M5.Display.setTextSize(1.45f);
+    M5.Display.setTextColor(core());
+    M5.Display.drawString(machine, 48, 160);
+    M5.Display.drawString(os, 48, 205);
+
+    M5.Display.setTextSize(1.05f);
+    M5.Display.setTextColor(mid());
+    M5.Display.drawString("Selector S0 is complete.", 48, 280);
+    M5.Display.drawString("MicroVAX II core bring-up is the next phase.", 48, 315);
+    M5.Display.drawString("PDP-7 Release Final remains unchanged on main.", 48, 350);
+}
