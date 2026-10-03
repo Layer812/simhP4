@@ -3,6 +3,8 @@ idf_component_register(
         "main.cpp"
         "simhp4_sd.cpp"
         "simhp4_usb_keyboard.c"
+        "simhp4_frontend_input.c"
+        "simhp4_selector.cpp"
     INCLUDE_DIRS
         "."
     REQUIRES
