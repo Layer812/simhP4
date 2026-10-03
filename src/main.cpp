@@ -25,6 +25,8 @@
 #include "simhp4_probe.h"
 #include "simhp4_media.h"
 #include "simhp4_usb_keyboard.h"
+#include "simhp4_frontend_input.h"
+#include "simhp4_selector.h"
 #include "simhp4_remote_tty.h"
 #include "simhp4_type340_surface.h"
 #include "simhp4_st_migration.h"
@@ -370,6 +372,36 @@ static void simhp4_a164_emit_key(unsigned idx, bool down)
     if (idx == k_ctrl) { s_a164_ctrl_down = down; return; }
     if (idx == k_alt)  { s_a164_alt_down = down;  return; }
 
+    /* S0 selector owns host navigation before a guest is started.  Consume
+     * only explicit navigation keys here; when selector mode is off the
+     * Release Final A164 behavior below is unchanged. */
+    if (simhp4_frontend_selector_active()) {
+        if (!down)
+            return;
+
+        const unsigned k_esc   = 0u * SIMHP4_A164_COLS + 0u;
+        const unsigned k_del   = 0u * SIMHP4_A164_COLS + 13u;
+        const unsigned k_bksp  = 2u * SIMHP4_A164_COLS + 13u;
+        const unsigned k_up    = 3u * SIMHP4_A164_COLS + 11u;
+        const unsigned k_enter = 3u * SIMHP4_A164_COLS + 13u;
+        const unsigned k_left  = 4u * SIMHP4_A164_COLS + 10u;
+        const unsigned k_down  = 4u * SIMHP4_A164_COLS + 11u;
+        const unsigned k_right = 4u * SIMHP4_A164_COLS + 12u;
+
+        simhp4_frontend_key_t nav = SIMHP4_FRONTEND_KEY_NONE;
+        if      (idx == k_up)                    nav = SIMHP4_FRONTEND_KEY_UP;
+        else if (idx == k_down)                  nav = SIMHP4_FRONTEND_KEY_DOWN;
+        else if (idx == k_left)                  nav = SIMHP4_FRONTEND_KEY_LEFT;
+        else if (idx == k_right)                 nav = SIMHP4_FRONTEND_KEY_RIGHT;
+        else if (idx == k_enter)                 nav = SIMHP4_FRONTEND_KEY_ENTER;
+        else if (idx == k_esc)                   nav = SIMHP4_FRONTEND_KEY_ESCAPE;
+        else if (idx == k_del || idx == k_bksp) nav = SIMHP4_FRONTEND_KEY_BACK;
+
+        if (nav != SIMHP4_FRONTEND_KEY_NONE)
+            (void)simhp4_frontend_submit_nav(nav);
+        return;
+    }
+
     /* SIMHP4_R0A9R19B_A164_HELD_SPACE_TRAVEL
      * A164 Normal mode supplies explicit make/break events, so the continuous
      * Space Travel controls are modeled as levels, not synthetic key-repeat.
@@ -428,8 +460,8 @@ static void simhp4_a164_emit_key(unsigned idx, bool down)
      * stream rather than inventing an escape-prefix convention. */
     (void)s_a164_alt_down;
 
-    if (!simhp4_g2_host_enqueue(ch)) {
-        ESP_LOGW(TAG, "SIMHP4_R0A8 A164 -> G2 input queue full ch=%02x", (unsigned)ch);
+    if (!simhp4_frontend_submit_char(ch)) {
+        ESP_LOGW(TAG, "SIMHP4_R0A8 A164 -> frontend input queue full ch=%02x", (unsigned)ch);
     }
 }
 
@@ -1230,6 +1262,17 @@ extern "C" void app_main(void)
     M5.Display.setTextSize(2);
     M5.Display.setCursor(24, 24);
 
+    if (!simhp4_frontend_input_init()) {
+        ESP_LOGE(TAG, "S0 frontend input queue allocation failed");
+        M5.Display.println("FAIL: selector input");
+        for (;;) {
+            M5.update();
+            vTaskDelay(pdMS_TO_TICKS(50));
+        }
+    }
+    /* Arm selector ownership before USB/A164 tasks can publish a key. */
+    simhp4_frontend_set_selector_active(1);
+
     const char *probe = simhp4_pdp7_compile_probe_version();
     const char *machine = simhp4_pdp7_machine_name();
     const char *runtime = simhp4_runtime_profile();
@@ -1290,6 +1333,26 @@ extern "C" void app_main(void)
     ESP_LOGI(TAG,
              "SIMHP4_R0A5 local seat core=%d g2_local=%d usb_hid=%d policy=CPU0-HID->local-TMXR->CPU1-G2IN;CPU1-G2OUT->queue->CPU0-M5GFX",
              xPortGetCoreID(), g2_local_ok, usb_kbd_ok);
+
+    const simhp4_selector_choice_t boot_choice = simhp4_selector_run();
+    ESP_LOGI(TAG,
+             "SIMHP4_S0 selector machine=%d os=%d",
+             (int)boot_choice.machine, (int)boot_choice.os);
+
+    if (boot_choice.machine == SIMHP4_MACHINE_MICROVAX2) {
+        ESP_LOGI(TAG,
+                 "SIMHP4_S0 MicroVAX II / 4.3BSD selected; VAX core is intentionally not started in selector phase");
+        simhp4_selector_show_not_ready(boot_choice);
+        for (;;) {
+            M5.update();
+            vTaskDelay(pdMS_TO_TICKS(50));
+        }
+    }
+
+    M5.Display.fillScreen(0x0000);
+    M5.Display.setTextColor(0xFFFF, 0x0000);
+    M5.Display.setTextSize(2);
+    M5.Display.setCursor(24, 24);
 
     M5.Display.println("RetroP4 SIMH");
     M5.Display.println("R0A5 / UNIX V0 LIVE");
