@@ -78,3 +78,72 @@ add_dependencies(${COMPONENT_LIB} simhp4_pdp7_min_machine)
 
 message(STATUS "SIMHP4 R0A5: persistent interactive UNIX V0 G2 shell")
 
+# SIMHP4_VAX630_COMPILE_PROBE
+#
+# Compile-only MicroVAX II probe.  This target is deliberately EXCLUDE_FROM_ALL
+# and is never linked into the PDP-7 application, because the Open SIMH PDP-7
+# and VAX machines both export simulator-global names such as sim_devices,
+# sim_name and cpu_unit.
+#
+# Local development trees that contain the full pinned Open SIMH source can run:
+#   ninja -C build -j1 simhp4_vax630_compile_probe
+#
+# Public/minimal source trees remain buildable even when VAX/PDP11 directories
+# have not yet been populated.
+set(SIMHP4_VAX630_PROBE_SOURCES
+    "${SIMH_DIR}/VAX/vax_cpu.c"
+    "${SIMH_DIR}/VAX/vax_cpu1.c"
+    "${SIMH_DIR}/VAX/vax_fpa.c"
+    "${SIMH_DIR}/VAX/vax_cis.c"
+    "${SIMH_DIR}/VAX/vax_octa.c"
+    "${SIMH_DIR}/VAX/vax_cmode.c"
+    "${SIMH_DIR}/VAX/vax_mmu.c"
+    "${SIMH_DIR}/VAX/vax_sys.c"
+    "${SIMH_DIR}/VAX/vax_syscm.c"
+    "${SIMH_DIR}/VAX/vax_watch.c"
+    "${SIMH_DIR}/VAX/vax630_stddev.c"
+    "${SIMH_DIR}/VAX/vax630_sysdev.c"
+    "${SIMH_DIR}/VAX/vax630_io.c"
+    "${SIMH_DIR}/VAX/vax630_syslist.c"
+    "${SIMH_DIR}/PDP11/pdp11_rq.c"
+)
+
+set(SIMHP4_VAX630_PROBE_MISSING "")
+foreach(_src IN LISTS SIMHP4_VAX630_PROBE_SOURCES)
+    if(NOT EXISTS "${_src}")
+        list(APPEND SIMHP4_VAX630_PROBE_MISSING "${_src}")
+    endif()
+endforeach()
+
+if(SIMHP4_VAX630_PROBE_MISSING)
+    message(STATUS
+        "SIMHP4 VAX630 compile probe disabled; full pinned VAX/PDP11 source is not present")
+else()
+    add_library(simhp4_vax630_compile_objs OBJECT EXCLUDE_FROM_ALL
+        ${SIMHP4_VAX630_PROBE_SOURCES})
+    set_target_properties(simhp4_vax630_compile_objs PROPERTIES C_STANDARD 99)
+    target_include_directories(simhp4_vax630_compile_objs PRIVATE
+        "${SIMH_DIR}"
+        "${SIMH_DIR}/VAX"
+        "${SIMH_DIR}/PDP11"
+    )
+    target_compile_definitions(simhp4_vax630_compile_objs PRIVATE
+        VM_VAX=1
+        VAX_630=1
+        USE_INT64=1
+        USE_ADDR64=1
+        SIM_BUILD_TOOL=RetroP4_ESP_IDF_V0
+    )
+    target_compile_options(simhp4_vax630_compile_objs PRIVATE
+        -Wno-error=all
+        -Wno-error=format
+        -Wno-unused-function
+        -Wno-unused-variable
+        -Wno-unused-parameter
+    )
+    add_custom_target(simhp4_vax630_compile_probe
+        DEPENDS simhp4_vax630_compile_objs)
+    message(STATUS
+        "SIMHP4 V0: MicroVAX II VAX_630 compile-only probe target enabled")
+endif()
+
