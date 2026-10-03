@@ -17,6 +17,7 @@
 #include "usb/hid_usage_keyboard.h"
 
 #include "simhp4_probe.h"
+#include "simhp4_frontend_input.h"
 
 /*
  * SIMHP4 R0A2
@@ -42,6 +43,13 @@
 #define SIMHP4_USB_HID_TASK_PRIO    6
 #define SIMHP4_USB_CTRL_TASK_PRIO   5
 #define SIMHP4_USB_REPORT_MAX       64
+
+/* USB HID usage IDs outside the ASCII table. Keep these local so selector
+ * navigation does not depend on optional naming in the IDF HID header. */
+#define SIMHP4_HID_KEY_RIGHT_ARROW  0x4Fu
+#define SIMHP4_HID_KEY_LEFT_ARROW   0x50u
+#define SIMHP4_HID_KEY_DOWN_ARROW   0x51u
+#define SIMHP4_HID_KEY_UP_ARROW     0x52u
 
 static const char *TAG = "SIMHP4_USB_KBD";
 
@@ -138,11 +146,30 @@ static void process_boot_keyboard_report(const uint8_t *data, size_t length)
         if (key_found(s_prev_keys, code, HID_KEYBOARD_KEY_MAX))
             continue;
 
+        if (simhp4_frontend_selector_active()) {
+            simhp4_frontend_key_t nav = SIMHP4_FRONTEND_KEY_NONE;
+
+            if (code == SIMHP4_HID_KEY_UP_ARROW)
+                nav = SIMHP4_FRONTEND_KEY_UP;
+            else if (code == SIMHP4_HID_KEY_DOWN_ARROW)
+                nav = SIMHP4_FRONTEND_KEY_DOWN;
+            else if (code == SIMHP4_HID_KEY_LEFT_ARROW)
+                nav = SIMHP4_FRONTEND_KEY_LEFT;
+            else if (code == SIMHP4_HID_KEY_RIGHT_ARROW)
+                nav = SIMHP4_FRONTEND_KEY_RIGHT;
+
+            if (nav != SIMHP4_FRONTEND_KEY_NONE) {
+                if (simhp4_frontend_submit_nav(nav))
+                    ++s_key_count;
+                continue;
+            }
+        }
+
         if (keycode_to_char(report->modifier.val, code, &ch)) {
-            if (simhp4_g2_host_enqueue(ch)) {
+            if (simhp4_frontend_submit_char(ch)) {
                 ++s_key_count;
             } else {
-                ESP_LOGW(TAG, "G2 input FIFO full; key dropped");
+                ESP_LOGW(TAG, "frontend input queue full; key dropped");
             }
         }
     }
