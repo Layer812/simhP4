@@ -4,9 +4,11 @@
 
 Copyright (c) 2026 simhP4 contributors
 
-This notice applies to original simhP4 / RetroP4 integration code and modifications created for the ESP32-P4 / M5Stack Tab5 port.
+This notice applies to original simhP4 / RetroP4 integration code and simhP4-authored modifications created for the ESP32-P4 / M5Stack Tab5 port.
 
-Upstream and reconstructed components retain their own copyright notices and license terms. Those notices must not be removed or replaced by the simhP4 copyright line.
+That original work is licensed under the MIT License. See `LICENSE` and `LICENSES/simhP4-MIT.txt`.
+
+Upstream and reconstructed components retain their own copyright notices and license terms. Those notices must not be removed or replaced by the simhP4 copyright line, and the simhP4 MIT grant does not override them.
 
 ## Open SIMH
 
