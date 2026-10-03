@@ -1,0 +1,12 @@
+/build/
+/managed_components/
+/sdkconfig
+/sdkconfig.old
+/dependencies.lock
+/components/simh_pdp7_probe/assets/image.fs
+/components/simh_pdp7_probe/assets/boot.rim
+*.bak
+*.before_*.bak
+*.log
+__pycache__/
+.DS_Store
