@@ -4,7 +4,7 @@ simhP4 combines original integration work with upstream and reconstructed compon
 
 | Component / material | License / notice |
 |---|---|
-| simhP4 / RetroP4 original integration work | Copyright (c) 2026 simhP4 contributors; see source-file notices, `../LICENSE.md`, and `../NOTICE.md` |
+| simhP4 / RetroP4 original integration work and simhP4-authored modifications | **MIT License**; Copyright (c) 2026 simhP4 contributors; see `../LICENSE`, `simhP4-MIT.txt`, `../LICENSE.md`, and `../NOTICE.md` |
 | Open SIMH-derived simulator code | Open SIMH upstream license; see `Open-SIMH-LICENSE.txt` and `SIMH_LICENSE.txt` |
 | `DoctorWkt/pdp7-unix` reconstruction source | Pinned Git submodule; upstream GNU GPL v3 terms; see `pdp7-unix-GPL-3.0.txt` |
 | M5Unified | Pinned Git submodule; retains its upstream license and copyright notices |
@@ -17,4 +17,6 @@ Exact dependency commits and Release Clean source fingerprints are recorded in [
 
 ## Project-level license
 
-The third-party license files in this directory do **not** by themselves grant a new blanket license for original simhP4 integration code. Rights for that original code are those stated in the applicable source-file notices unless its copyright holders explicitly select an additional project-level license.
+Original simhP4 / RetroP4 integration code and simhP4-authored modifications are licensed under the **MIT License**, to the extent the simhP4 contributors hold the necessary rights.
+
+Third-party and upstream portions are excluded from that grant when another license already applies to them.
