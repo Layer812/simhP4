@@ -22,7 +22,13 @@ M5Burner share code:
 qz8IApmUlBDOpGBP
 ```
 
-The repository is being prepared as the source/documentation home for this build.
+The **Release Final Clean source code is included in this repository**. External source trees are pinned to the exact commits used by this build.
+
+- [Build from source](BUILDING.md)
+- [Release source provenance and fingerprints](SOURCE_PROVENANCE.md)
+- [Licensing and third-party notices](LICENSE.md)
+
+The generated UNIX V0 disk image is built from the pinned `pdp7-unix` source rather than duplicated in Git.
 
 ### Wi-Fi remote console
 
@@ -246,7 +252,7 @@ This repository keeps third-party license texts under [`LICENSES/`](LICENSES/). 
 - PDP-7 UNIX reconstruction materials from `DoctorWkt/pdp7-unix` retain their upstream GNU GPL v3 terms where applicable; see [`LICENSES/pdp7-unix-GPL-3.0.txt`](LICENSES/pdp7-unix-GPL-3.0.txt).
 - simhP4 / RetroP4 integration code carries its own 2026 contributor copyright notice. No upstream copyright notice is replaced or removed.
 
-See [`NOTICE.md`](NOTICE.md) and [`LICENSES/README.md`](LICENSES/README.md) for the attribution and license map.
+See [`LICENSE.md`](LICENSE.md), [`NOTICE.md`](NOTICE.md), and [`LICENSES/README.md`](LICENSES/README.md) for the attribution and license map.
 
 ---
 
@@ -280,6 +286,16 @@ UNIX V0は、1969～1970年頃にBell LabsでPDP-7向けに作られた最初期
 ```text
 qz8IApmUlBDOpGBP
 ```
+
+### ソースコード / ビルド
+
+**Release Final Cleanのソースコードをこのリポジトリに収録しています。** 外部source treeも、Releaseで使用したexact commitへ固定しています。
+
+- [ソースからのビルド手順](BUILDING.md)
+- [Release source provenance / fingerprint](SOURCE_PROVENANCE.md)
+- [ライセンスと第三者notice](LICENSE.md)
+
+UNIX V0の生成disk imageそのものはGitへ重複収録せず、固定した `pdp7-unix` sourceから生成する方式です。
 
 ### Wi-Fi別コンソール
 
@@ -492,4 +508,4 @@ Open SIMHなどのupstream componentのcopyrightとlicenseは、それぞれ元�
 - `DoctorWkt/pdp7-unix` 由来のPDP-7 UNIX再構成物: 該当部分はupstreamのGNU GPL v3条件を維持し、[`LICENSES/pdp7-unix-GPL-3.0.txt`](LICENSES/pdp7-unix-GPL-3.0.txt) を収録
 - simhP4 / RetroP4の2026年統合部分: 独自のcontributor copyright noticeを維持
 
-upstreamのcopyright noticeをsimhP4の表記で置き換えることはしません。詳細は [`NOTICE.md`](NOTICE.md) と [`LICENSES/README.md`](LICENSES/README.md) を参照してください。
+upstreamのcopyright noticeをsimhP4の表記で置き換えることはしません。詳細は [`LICENSE.md`](LICENSE.md)、[`NOTICE.md`](NOTICE.md)、[`LICENSES/README.md`](LICENSES/README.md) を参照してください。
