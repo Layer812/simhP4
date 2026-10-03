@@ -1,6 +1,6 @@
 # simhP4 — PDP-7 UNIX V0
 
-![simhP4 PDP-7 UNIX V0](title.png)
+![simhP4 PDP-7 UNIX V0](title.jpg)
 
 A portable PDP-7 UNIX V0 environment for **M5Stack Tab5 / ESP32-P4**, built on Open SIMH and the reconstructed PDP-7 UNIX sources.
 
